@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1118">
+  <title>Embervale Online</title>
+  <meta name="description" content="A cozy old-school fantasy MMO adventure.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+  <header class="site-head">
+    <div class="brand-wrap">
+      <div class="brand-mark" aria-hidden="true">✦</div>
+      <div><h1>Embervale Online</h1><p>Old-school fantasy MMO adventure</p></div>
+    </div>
+    <div class="head-status">
+      <span id="netStatus" class="status offline">● Reconnecting</span>
+      <span id="populationPill" class="status">👥 <b id="onlineCount">0</b> online</span>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section id="joinPanel" class="join-card">
+      <div class="join-art" aria-hidden="true">
+        <div class="moon"></div>
+        <div class="hill h1"></div><div class="hill h2"></div><div class="hill h3"></div>
+        <div class="tower t1"></div><div class="tower t2"></div>
+        <div class="fire">✦</div>
+      </div>
+      <div class="join-copy">
+        <p class="eyebrow">A shared world awaits</p>
+        <h2>Make your adventurer</h2>
+        <p>Walk the world, gather resources, level skills, fight shared monsters, finish quests, craft equipment, bank loot, and meet other players.</p>
+        <form id="joinForm" class="join-form">
+          <label for="nameInput">Character name</label>
+          <div class="join-row"><input id="nameInput" maxlength="18" autocomplete="nickname" placeholder="Wanderer"><button class="primary" type="submit">Enter Embervale</button></div>
+        </form>
+        <div class="feature-row"><span>⚔️ Shared combat</span><span>🌲 Gathering</span><span>📜 Quests</span><span>💬 Live chat</span></div>
+      </div>
+    </section>
+
+    <section id="game" class="game hidden" aria-label="Embervale game">
+      <section class="world-column">
+        <div class="hud-strip">
+          <div class="identity"><div id="avatarChip" class="avatar-chip">⚔️</div><div><strong id="playerName">Wanderer</strong><small id="zoneSubtitle">The First Vale</small></div></div>
+          <div class="hud-stats">
+            <span>❤️ <b id="hp">40</b>/<span id="maxHp">40</span></span>
+            <span>🪙 <b id="coins">25</b></span>
+            <span>🏆 <b id="totalLevel">8</b></span>
+          </div>
+        </div>
+
+        <div id="viewport" class="viewport" tabindex="0" aria-label="Game world. Use WASD or arrow keys to move. Click or tap to walk and interact.">
+          <canvas id="gameCanvas" width="960" height="600"></canvas>
+          <div class="world-overlay top-left"><span id="zoneName" class="zone-name">Greenmeadow</span><span id="zoneHint">Click the ground to walk</span></div>
+          <div id="targetCard" class="target-card hidden"><div><small id="targetType">Target</small><strong id="targetName">Oak Tree</strong></div><button id="targetAction" type="button" class="primary compact">Interact</button></div>
+          <div id="toast" class="toast" role="status" aria-live="polite"></div>
+          <div class="desktop-help">WASD / arrows to move · click to walk · E interact · Space attack · F eat</div>
+          <div class="mobile-pad" aria-label="Touch movement controls">
+            <button type="button" data-move="up" aria-label="Move up">▲</button>
+            <button type="button" data-move="left" aria-label="Move left">◀</button>
+            <button type="button" data-move="down" aria-label="Move down">▼</button>
+            <button type="button" data-move="right" aria-label="Move right">▶</button>
+          </div>
+          <div class="mobile-actions"><button id="mobileAction" type="button" class="primary">⚔️ Action</button><button id="mobileEat" type="button">🍗 Eat</button></div>
+        </div>
+
+        <div class="action-bar">
+          <button id="interactBtn" type="button" class="primary">✋ Interact</button>
+          <button id="attackBtn" type="button">⚔️ Attack</button>
+          <button id="heavyBtn" type="button">💥 Heavy</button>
+          <button id="eatBtn" type="button">🍗 Eat <span id="foodQuick">0</span></button>
+          <button id="restBtn" type="button">🔥 Rest</button>
+        </div>
+
+        <div class="world-feed">
+          <div class="feed-title"><span>Adventure log</span><span id="nearbyCount">1 nearby</span></div>
+          <div id="eventLog" class="event-log" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <aside class="side-column">
+        <nav class="tabs" aria-label="Game panels">
+          <button class="tab active" data-tab="bag" type="button">🎒 Bag</button>
+          <button class="tab" data-tab="skills" type="button">📈 Skills</button>
+          <button class="tab" data-tab="quests" type="button">📜 Quests</button>
+          <button class="tab" data-tab="craft" type="button">🔥 Craft</button>
+          <button class="tab" data-tab="social" type="button">💬 Social</button>
+          <button class="tab" data-tab="character" type="button">🧍 Hero</button>
+        </nav>
+
+        <section id="panel-bag" class="panel-screen active-panel">
+          <div class="panel-head"><div><p class="eyebrow">Inventory</p><h2>Backpack</h2></div><span class="tiny-pill">No slot limit</span></div>
+          <div id="bagGrid" class="bag-grid"></div>
+          <div class="equipment-card"><div><small>Weapon</small><strong id="weaponName">Rusty Sword</strong></div><div><small>Armor</small><strong id="armorName">Traveler Clothes</strong></div></div>
+        </section>
+
+        <section id="panel-skills" class="panel-screen">
+          <div class="panel-head"><div><p class="eyebrow">Progression</p><h2>Skills</h2></div><span class="tiny-pill">Total <b id="skillTotal">8</b></span></div>
+          <div id="skillsGrid" class="skills-grid"></div>
+        </section>
+
+        <section id="panel-quests" class="panel-screen">
+          <div class="panel-head"><div><p class="eyebrow">Story</p><h2>Quest Journal</h2></div></div>
+          <div id="questList" class="quest-list"></div>
+        </section>
+
+        <section id="panel-craft" class="panel-screen">
+          <div class="panel-head"><div><p class="eyebrow">Production</p><h2>Crafting</h2></div></div>
+          <div class="craft-list">
+            <button data-craft="smelt"><span>🔥</span><div><strong>Bronze Bar</strong><small>2 Copper Ore → 1 Bar</small></div></button>
+            <button data-craft="cook"><span>🍳</span><div><strong>Cooked Fish</strong><small>1 Raw Fish → 1 Food</small></div></button>
+            <button data-craft="sword"><span>🗡️</span><div><strong>Bronze Sword</strong><small>4 Bars · +3 damage</small></div></button>
+            <button data-craft="armor"><span>🛡️</span><div><strong>Bronze Armor</strong><small>6 Bars · +15 max HP</small></div></button>
+            <button data-craft="bow"><span>🏹</span><div><strong>Oak Shortbow</strong><small>8 Logs · ranged-looking upgrade</small></div></button>
+            <button data-craft="moon" class="rare"><span>💎</span><div><strong>Moonstone Blade</strong><small>1 Moonstone + 10 Bars · +8 damage</small></div></button>
+          </div>
+        </section>
+
+        <section id="panel-social" class="panel-screen">
+          <div class="panel-head"><div><p class="eyebrow">Community</p><h2>Tavern Chat</h2></div></div>
+          <div id="chatLog" class="chat-log"></div>
+          <form id="chatForm" class="chat-form"><label class="sr-only" for="chatInput">Chat message</label><input id="chatInput" maxlength="220" placeholder="Say something…"><button class="primary" type="submit">Send</button></form>
+          <div class="players-head"><strong>Players nearby</strong><span id="playerCountText">0</span></div>
+          <div id="nearbyPlayers" class="people-list"></div>
+        </section>
+
+        <section id="panel-character" class="panel-screen">
+          <div class="panel-head"><div><p class="eyebrow">Character</p><h2>Your Adventurer</h2></div></div>
+          <div class="character-preview"><canvas id="heroCanvas" width="220" height="220"></canvas><strong id="heroName">Wanderer</strong><small id="heroStats">Combat 1 · Total 8</small></div>
+          <div class="color-picker"><span>Tunic color</span><div id="shirtColors" class="swatches"></div></div>
+          <div class="controls-card"><strong>Controls</strong><p><kbd>WASD</kbd> / <kbd>Arrows</kbd> move · click/tap ground to walk · <kbd>E</kbd> interact · <kbd>Space</kbd> attack · <kbd>F</kbd> eat.</p></div>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="modal" class="game-modal">
+    <div class="modal-head"><div><p id="modalEyebrow" class="eyebrow">NPC</p><h2 id="modalTitle">Conversation</h2></div><button id="modalClose" type="button" class="icon-btn" aria-label="Close">✕</button></div>
+    <div id="modalBody"></div>
+  </dialog>
+
+  <script src="game.js"></script>
+</body>
+</html>
