@@ -48,3 +48,20 @@ This MVP displays **real registered profiles only** and does not claim verified 
 - `public/dating.css` — responsive presentation
 - `public/dating.js` — client views and interactions
 - `data/dating.json` — generated runtime database, not for source control
+
+## New Sparks features (October 2026)
+
+The **More** tab now includes:
+- Discover preferences by age and relationship intention, optional hidden-profile setting, and Slow Dating Mode (five profiles per discovery request)
+- Interest-based sorting and shared-interest highlights; these are heuristic, **not scientific compatibility verification**
+- First Spark optional conversation questions and three profile prompts
+- Optional voice-introduction URL (HTTPS-hosted audio; uploads and audio moderation not yet supported)
+- Date proposals to mutual matches, with acceptance or decline by the recipient
+- Private self-managed safety check-ins; **not background notifications, emergency dispatch, or trusted-contact messaging**
+- Two-sided Relationship Mode invitation and acceptance, pausing both profiles from discovery until leaving
+- Saved passes, blocks, reports and existing message restrictions
+
+Safety note: the current "verification" field is always false. **Identity and age verification are not implemented**; never represent someone as verified. Sign-up ages are self-declared and reports require manual operational review. Additional scam detection, anti-harassment controls, production auth, report triage, trust-and-safety staffing and proper database storage are mandatory before inviting the public.
+
+## Validation
+`npm run check` validates server and client JavaScript syntax. `node --test tests/dating.test.mjs` runs a real-server smoke test covering registration, filters, likes, mutual matches, messaging, plan acceptance, check-ins, relationship invitations and blocking. GitHub Actions workflow `.github/workflows/dating-checks.yml` runs both on pushes and pull requests. Inspect actual Actions results before considering the build verified.
