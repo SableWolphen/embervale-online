@@ -65,3 +65,23 @@ Safety note: the current "verification" field is always false. **Identity and ag
 
 ## Validation
 `npm run check` validates server and client JavaScript syntax. `node --test tests/dating.test.mjs` runs a real-server smoke test covering registration, filters, likes, mutual matches, messaging, plan acceptance, check-ins, relationship invitations and blocking. GitHub Actions workflow `.github/workflows/dating-checks.yml` runs both on pushes and pull requests. Inspect actual Actions results before considering the build verified.
+
+## October 2026 enhancements — latest development pass
+
+New app features:
+- Four primary navigation areas: Discover, Likes & Chats, Plans, and You.
+- Discover by vibe, including Homebody, Adventurer, Gamer, Animal Lover, Bookworm, Night Owl, Creative and Foodie.
+- Optional five-question personality profile; see shared-answer highlights, shared vibes, and shared interests in discovery. These are descriptive overlaps, not validated compatibility measurements.
+- Optional dealbreaker notes, expanded profile guidance, bio inspiration prompts, and opt-in preference storage for future read receipts and presence (these features are not live).
+- Incoming likes, mutual match chat with heart reactions, and server endpoints for unmatching and private match notes.
+- Date Night Generator ideas and a private events organizer, in addition to match date invitations and saved personal check-ins.
+- Refreshed mobile layout and syntax checks for all client files.
+
+**Not yet complete:** public hosted events, photo/voice recording uploads, GIF integrations, live video, cross-device real-time notifications, profile verification, live presence and read receipts, actual anti-scam detection, photo moderation, a transactional production database and reliable account recovery. These require additional providers, operations, security work, or infrastructure. The private event calendar is not a public community-events directory; personal check-ins are not emergency alerts.
+
+For local validation run:
+```sh
+npm run check
+node --test tests/dating.test.mjs
+```
+GitHub Actions has been configured to run both, but check the latest workflow run for an authoritative pass/fail status before deploying.
