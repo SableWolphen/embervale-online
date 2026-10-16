@@ -9,3 +9,7 @@
 @media(max-width:760px){.tools-grid{grid-template-columns:1fr}.tools-grid .panel{padding:20px}.tabs{gap:4px}.tabs button{padding:10px 12px;font-size:.76rem}}
 
 .portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+
+.discovery-options{display:flex;align-items:end;flex-wrap:wrap;gap:14px;margin:0 0 24px}.discovery-options label{margin:0;min-width:180px}.discovery-options select{margin-top:5px}.discovery-options button{margin-bottom:0}
+.profile-extras{margin-bottom:22px}.profile-extras .panel{height:100%}.react{margin-left:8px;padding:2px 8px!important;border:0!important;background:transparent!important;font-size:1.2rem;cursor:pointer}.reaction-display{font-size:.85rem}.chat-messages .bubble{line-height:1.5}.chat-messages .bubble button{color:inherit!important}
+@media(max-width:760px){.discovery-options{align-items:stretch}.discovery-options label,.discovery-options select{width:100%}.discovery-options button{width:100%}.tabs{justify-content:space-between}.tabs button{flex:1;font-size:.74rem;padding:11px 7px}}
