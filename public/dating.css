@@ -7,3 +7,5 @@
 .stack{margin-top:20px;display:grid;gap:10px}.mini{padding:12px;border:1px solid var(--line);border-radius:14px;background:#ffffff0a;overflow-wrap:anywhere;font-size:.85rem;line-height:1.55}.mini button{margin:8px 6px 0 0;padding:8px 12px;border-radius:10px;color:var(--text);background:#593c59;border:1px solid var(--line)}
 .person audio{width:100%;max-width:100%;margin:10px 0}.tabs{overflow-x:auto;scrollbar-width:thin}.tabs button{white-space:nowrap;flex-shrink:0}
 @media(max-width:760px){.tools-grid{grid-template-columns:1fr}.tools-grid .panel{padding:20px}.tabs{gap:4px}.tabs button{padding:10px 12px;font-size:.76rem}}
+
+.portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
