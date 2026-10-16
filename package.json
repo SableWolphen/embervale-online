@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node dating-server.mjs",
     "dev": "node --watch dating-server.mjs",
-    "check": "node --check dating-server.mjs && node --check public/dating.js"
+    "check": "node --check dating-server.mjs && node --check public/dating.js && node --check public/spark-tools.js && node --check public/advanced.js"
   },
   "engines": {
     "node": ">=20"
