@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {join,extname,resolve} from 'node:path';
 import {randomUUID,randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 const ROOT=resolve('public'), DBFILE=resolve('data/dating.json'), PORT=Number(process.env.PORT||3000);
-let db={users:[],likes:[],messages:[],blocks:[],reports:[]};let queue=Promise.resolve();
+let db={users:[],likes:[],messages:[],blocks:[],reports:[],passes:[],plans:[],checkins:[],relationships:[]};let queue=Promise.resolve();
 try{db={...db,...JSON.parse(await readFile(DBFILE,'utf8'))}}catch(e){if(e.code!=='ENOENT')throw e}
 const save=()=>{queue=queue.catch(()=>{}).then(async()=>{await mkdir(resolve('data'),{recursive:true});await writeFile(DBFILE,JSON.stringify(db));});return queue};
 const sessions=new Map(), attempts=new Map();
@@ -11,7 +11,7 @@ const json=(res,status,obj)=>{res.writeHead(status,{'Content-Type':'application/
 const clean=(x,max=150)=>String(x??'').trim().slice(0,max);
 const hash=p=>{const salt=randomBytes(16).toString('hex');return salt+':'+scryptSync(p,salt,64).toString('hex')};
 const verify=(p,v)=>{try{const [salt,h]=v.split(':');return timingSafeEqual(scryptSync(p,salt,64),Buffer.from(h,'hex'))}catch{return false}};
-const publicUser=u=>({id:u.id,name:u.name,age:u.age,city:u.city,bio:u.bio,interests:u.interests,lookingFor:u.lookingFor,photo:u.photo,pronouns:u.pronouns});
+const publicUser=u=>({id:u.id,name:u.name,age:u.age,city:u.city,bio:u.bio,interests:u.interests,lookingFor:u.lookingFor,photo:u.photo,pronouns:u.pronouns,voice:u.voice||'',prompts:u.prompts||[],mode:u.mode||'dating',verified:false});
 const tokenUser=req=>{const token=(req.headers.authorization||'').replace(/^Bearer /,'');const s=sessions.get(token);if(!s||s.exp<Date.now()){sessions.delete(token);return null}return db.users.find(u=>u.id===s.id)};
 const parse=async req=>{let s='';for await(const chunk of req){s+=chunk;if(s.length>20000)throw Error('Request too large')}return JSON.parse(s||'{}')};
 const pair=(a,b)=>[a,b].sort().join(':');
@@ -40,15 +40,19 @@ const server=http.createServer(async(req,res)=>{try{
     if(method==='POST'&&route==='/api/logout'){sessions.delete((req.headers.authorization||'').slice(7));return json(res,200,{ok:true})}
     if(method==='GET'&&route==='/api/me')return json(res,200,{user:publicUser(me)});
     if(method==='PUT'&&route==='/api/me'){
-      const b=await parse(req);for(const [field,max] of [['name',40],['city',80],['bio',600],['lookingFor',80],['pronouns',40]])if(field in b)me[field]=clean(b[field],max);
+      const b=await parse(req);for(const [field,max] of [['name',40],['city',80],['bio',600],['lookingFor',80],['pronouns',40],['mode',20]])if(field in b)me[field]=clean(b[field],max);
+      if(Array.isArray(b.prompts))me.prompts=b.prompts.slice(0,3).map(x=>clean(x,180));
+      if('voice' in b){const v=clean(b.voice,500);if(v&&!/^https:\/\/[^ ]+$/i.test(v))return json(res,400,{error:'Voice introduction must be an HTTPS link.'});me.voice=v}
+      if(b.preferences&&typeof b.preferences==='object'){const p=b.preferences;me.preferences={minAge:Math.max(18,Math.min(110,Number(p.minAge)||18)),maxAge:Math.max(18,Math.min(110,Number(p.maxAge)||110)),intent:clean(p.intent,80),slow:!!p.slow,hidden:!!p.hidden};}
       if(Array.isArray(b.interests))me.interests=b.interests.slice(0,12).map(i=>clean(i,30)).filter(Boolean);
       if('photo' in b){const p=clean(b.photo,500);if(p&&!/^https:\/\/[^ ]+$/i.test(p))return json(res,400,{error:'Photo must use an HTTPS URL.'});me.photo=p}
       if(!me.name)return json(res,400,{error:'Name is required.'});await save();return json(res,200,{user:publicUser(me)});
     }
     if(method==='GET'&&route==='/api/discover'){
-      const skip=new Set([me.id,...db.likes.filter(l=>l.from===me.id).map(l=>l.to)]);
-      return json(res,200,{profiles:db.users.filter(u=>!skip.has(u.id)&&!blocked(me.id,u.id)).map(publicUser).slice(0,50)});
+      const skip=new Set([me.id,...db.likes.filter(l=>l.from===me.id).map(l=>l.to),...db.passes.filter(x=>x.from===me.id && Date.now()-x.at<30*86400000).map(x=>x.to)]);
+      return json(res,200,{profiles:db.users.filter(u=>!skip.has(u.id)&&!blocked(me.id,u.id)&&u.mode!=='relationship'&&!u.preferences?.hidden&&u.age>=(me.preferences?.minAge||18)&&u.age<=(me.preferences?.maxAge||110)&&(!me.preferences?.intent||u.lookingFor===me.preferences.intent)).sort((a,b)=>{const common=u=>u.interests.filter(i=>me.interests.some(x=>x.toLowerCase()===i.toLowerCase())).length;return common(b)-common(a)}).map(u=>({...publicUser(u),sharedInterests:u.interests.filter(i=>me.interests.some(x=>x.toLowerCase()===i.toLowerCase()))})).slice(0,me.preferences?.slow?5:50)});
     }
+    if(method==='POST'&&route==='/api/pass'){const b=await parse(req),to=clean(b.id,80);if(!db.users.some(u=>u.id===to)||to===me.id)return json(res,400,{error:'Profile unavailable'});db.passes.push({from:me.id,to,at:Date.now()});await save();return json(res,200,{ok:true})}
     if(method==='POST'&&route==='/api/like'){
       const b=await parse(req),target=db.users.find(u=>u.id===b.id);
       if(!target||target.id===me.id||blocked(me.id,target.id))return json(res,400,{error:'Profile unavailable.'});
@@ -69,6 +73,41 @@ const server=http.createServer(async(req,res)=>{try{
       if(recent>=20)return json(res,429,{error:'Please slow down.'});
       const m={id:randomUUID(),from:me.id,to,body,at:Date.now()};db.messages.push(m);await save();return json(res,201,{message:m});
     }
+    if(method==='GET'&&route==='/api/preferences')return json(res,200,{preferences:me.preferences||{minAge:18,maxAge:110,intent:'',slow:false,hidden:false}});
+    if(method==='GET'&&route==='/api/plans')return json(res,200,{plans:db.plans.filter(p=>(p.from===me.id||p.to===me.id)&&!blocked(p.from,p.to))});
+    if(method==='POST'&&route==='/api/plans'){
+      const b=await parse(req),to=clean(b.to,80),title=clean(b.title,100),place=clean(b.place,140),when=clean(b.when,80);
+      if(!mutual(me.id,to)||blocked(me.id,to)||!title||!when)return json(res,400,{error:'Choose a mutual match, date and activity.'});
+      const p={id:randomUUID(),from:me.id,to,title,place,when,status:'proposed',at:Date.now()};db.plans.push(p);await save();return json(res,201,{plan:p});
+    }
+    if(method==='POST'&&route==='/api/plans/respond'){
+      const b=await parse(req),p=db.plans.find(x=>x.id===b.id&&x.to===me.id&&!blocked(x.from,x.to));
+      if(!p||p.status!=='proposed'||!['accepted','declined'].includes(b.status))return json(res,400,{error:'Plan unavailable'});
+      p.status=b.status;await save();return json(res,200,{plan:p});
+    }
+    if(method==='GET'&&route==='/api/checkins')return json(res,200,{checkins:db.checkins.filter(x=>x.by===me.id)});
+    if(method==='POST'&&route==='/api/checkins'){
+      const b=await parse(req),message=clean(b.message,250),when=clean(b.when,80);
+      if(!when)return json(res,400,{error:'Choose a check-in time'});
+      const c={id:randomUUID(),by:me.id,when,message,done:false,at:Date.now()};db.checkins.push(c);await save();return json(res,201,{checkin:c});
+    }
+    if(method==='POST'&&route==='/api/checkins/done'){
+      const b=await parse(req),c=db.checkins.find(x=>x.id===b.id&&x.by===me.id);
+      if(!c)return json(res,404,{error:'Check-in unavailable'});c.done=true;await save();return json(res,200,{ok:true});
+    }
+    if(method==='POST'&&route==='/api/relationship'){
+      const b=await parse(req),to=clean(b.to,80);
+      if(!mutual(me.id,to)||blocked(me.id,to))return json(res,400,{error:'Only mutual matches can receive this invitation.'});
+      if(db.relationships.some(x=>x.from===me.id&&x.to===to&&x.status==='pending'))return json(res,409,{error:'Already invited'});
+      db.relationships.push({id:randomUUID(),from:me.id,to,status:'pending',at:Date.now()});await save();return json(res,201,{ok:true});
+    }
+    if(method==='GET'&&route==='/api/relationships')return json(res,200,{invitations:db.relationships.filter(x=>x.to===me.id||x.from===me.id)});
+    if(method==='POST'&&route==='/api/relationship/respond'){
+      const b=await parse(req),x=db.relationships.find(x=>x.id===b.id&&x.to===me.id&&x.status==='pending');
+      if(!x||!['accepted','declined'].includes(b.status))return json(res,400,{error:'Invitation unavailable'});
+      x.status=b.status;if(b.status==='accepted'){me.mode='relationship';const other=db.users.find(u=>u.id===x.from);if(other)other.mode='relationship'}await save();return json(res,200,{ok:true});
+    }
+    if(method==='POST'&&route==='/api/relationship/leave'){me.mode='dating';for(const x of db.relationships.filter(x=>x.status==='accepted'&&(x.from===me.id||x.to===me.id)))x.status='ended';await save();return json(res,200,{ok:true})}
     if(method==='POST'&&route==='/api/block'){
       const b=await parse(req),target=clean(b.id,80);
       if(target===me.id||!db.users.some(u=>u.id===target))return json(res,400,{error:'Invalid profile.'});
