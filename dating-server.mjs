@@ -70,7 +70,7 @@ const server=http.createServer(async(req,res)=>{try{
     if(method==='GET'&&route==='/api/messages'){
       const other=clean(url.searchParams.get('with'),80);
       if(!mutual(me.id,other)||blocked(me.id,other))return json(res,403,{error:'Messages are only available to mutual matches.'});
-      return json(res,200,{messages:db.messages.filter(m=>pair(m.from,m.to)===pair(me.id,other)).slice(-100)});
+      const messages=db.messages.filter(m=>pair(m.from,m.to)===pair(me.id,other)).slice(-100);return json(res,200,{messages});
     }
     if(method==='POST'&&route==='/api/messages'){
       const b=await parse(req),to=clean(b.to,80),body=clean(b.body,1500);
@@ -79,6 +79,9 @@ const server=http.createServer(async(req,res)=>{try{
       const recent=db.messages.filter(m=>m.from===me.id&&m.at>Date.now()-60000).length;
       if(recent>=20)return json(res,429,{error:'Please slow down.'});
       const m={id:randomUUID(),from:me.id,to,body,at:Date.now()};db.messages.push(m);await save();return json(res,201,{message:m});
+    }
+    if(method==='GET'&&route==='/api/conversations'){
+      return json(res,200,{conversations:db.users.filter(u=>u.id!==me.id&&!blocked(me.id,u.id)&&mutual(me.id,u.id)).map(u=>{const msgs=db.messages.filter(m=>pair(m.from,m.to)===pair(me.id,u.id));const last=msgs[msgs.length-1];return {user:publicUser(u),last:last?{body:last.body,at:last.at,from:last.from}:null}}).sort((a,b)=>(b.last?.at||0)-(a.last?.at||0))});
     }
     if(method==='GET'&&route==='/api/preferences')return json(res,200,{preferences:me.preferences||{minAge:18,maxAge:110,intent:'',slow:false,hidden:false}});
     if(method==='GET'&&route==='/api/plans')return json(res,200,{plans:db.plans.filter(p=>(p.from===me.id||p.to===me.id)&&!blocked(p.from,p.to))});
