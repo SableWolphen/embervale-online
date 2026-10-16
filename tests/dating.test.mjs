@@ -24,6 +24,7 @@ try{
  assert.equal((await request('/like','POST',{id:x.user.id},b)).matched,true);
  assert.equal((await request('/messages','POST',{to:y.user.id,body:'Hi!'},a)).status,201);
  assert.equal((await request('/messages?with='+y.user.id,'GET',null,a)).messages.length,1);
+ const inbox=await request('/conversations','GET',null,a);assert.equal(inbox.status,200);assert.equal(inbox.conversations[0].user.id,y.user.id);assert.equal(inbox.conversations[0].last.body,'Hi!');
  const p=await request('/plans','POST',{to:y.user.id,title:'Coffee',place:'Cafe',when:'2027-01-01T18:00'},a);assert.equal(p.status,201);
  assert.equal((await request('/plans/respond','POST',{id:p.plan.id,status:'accepted'},b)).status,200);
  assert.equal((await request('/plans/respond','POST',{id:p.plan.id,status:'declined'},a)).status,400);
